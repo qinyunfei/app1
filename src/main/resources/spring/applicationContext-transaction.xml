@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation=" http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/aop 
+						http://www.springframework.org/schema/aop/spring-aop.xsd
+						http://www.springframework.org/schema/context 
+						http://www.springframework.org/schema/context/spring-context.xsd
+						http://www.springframework.org/schema/tx 
+						http://www.springframework.org/schema/tx/spring-tx.xsd
+	">
+	<!--开启注解事务 
+	 	注册事务注解处理器定义好配置文件后我们只需要在我们的类上加上注解@Transactional, 就可以指定这个类需要受Spring的事务管理 
+	<tx:annotation-driven transaction-manager="transactionManager" /> -->
+	
+	<!-- Spring 建议不要在接口或者接口方法上使用该注解，因为这只有在使用基于接口的代理时它才会生效 意思就是使用接口的代理对象才会生效 测试时要是直接获取接口实现类就会报org.springframework.beans.factory.NoSuchBeanDefinitionException异常 像这样DeptService ser=(DeptService) cnot.getBean(DeptServiceImpl.class); 这就是错的 DeptService ser=(DeptService) ac.getBean(DeptService.class); 这就是对的 -->
+	<!-- spring事务管理器 -->
+	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 声明式容器事务管理 ,transaction-manager指定事务管理器为transactionManager-->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 根据方法名指定事务属性 propagation:指定事物的传播属性 
+															1、REQUIRED: 如果有事务在运行，当前的方法就在这个事务内运行，否则，就启动一个新的事务，并在自己的事务内运行 
+															2、REQUIRED NEW: 当前的方法必须启动新事务，并在它自己的事务内运行.如果有事务正在运行，应该将它挂起
+															3、SUPPORTS:如果有事务在运行，当前的方法就在这个事务内运行，否则它可以不运行在事务中
+															4、NOT_SUPPORTED:当前的方法不应该运行在事务中如果有运行的事务将它挂起 
+															5、MANDATORY当前的方法必须运行在事务内部，如果没有正在运行的事务，就抛出异常
+															6、LNEVER当前的方法不应该运行在事务中，如果有运行的事务，就抛出异常
+															7、如果有事务在运行，当前的方法就应该在这个事务的嵌套事务内运行，否则，就启动一个新的事务，并在它自己的事务内运行
+									isolation:设定事务的隔离级别：（各个数据库厂商默认的隔离级别不同 请百度）
+															1、读未提交:READ UNCOMMITTED（允许Transaction01读取Transaction02未提交的修改。）
+															2、读已提交:READ COMMITTED（要求Transaction01只能读取Transaction02已提交的修改。）
+															3、可重复读:REPEATABLE READ（确保Transaction01可以多次从一个字段中读取到相同的值，即Transaction01执行期间禁止其它事务对这 个字段进行更新。）
+															4、串行化:SERIALIZABLE（确保Transaction01可以多次从一个表中读取到相同的行，在Transaction01执行期间，禁止其它事务对这个表进行添加、更新、删除操作。可以避免任何并发问题，但性能十分低下。）
+									rollback-for:指定发生指定异常时进行回滚（spring事务默认编译时异常不回滚）
+									no-rollback-for:发生了指定异常也不回滚
+									read-only:是否只读（开启只读就无法进行更删改操作）
+									timeout(毫秒):方法超时则终止方法运行进行事务回滚
+									 -->
+			<tx:method name="delete*" propagation="REQUIRED" read-only="false" 
+				rollback-for="java.lang.Exception" />
+			<tx:method name="insert*" propagation="REQUIRED" read-only="false"
+				rollback-for="java.lang.Exception"  />
+			<tx:method name="update*" propagation="REQUIRED" read-only="false"
+				rollback-for="java.lang.Exception" />
+			<tx:method name="save*" propagation="REQUIRED" read-only="false"
+				rollback-for="java.lang.Exception" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 配置事务切面-->
+	<aop:config>
+		<!--定义切点  -->
+		<aop:pointcut id="pc" expression="execution(* sgg.qin.service..*(..))" />
+		<!-- 定义环绕通知 -->
+		<!-- aop:advisor，是有顺序的，必须放在aop:pointcut之后 -->
+		<aop:advisor pointcut-ref="pc" advice-ref="txAdvice" order="50"/>
+	</aop:config>
+	
+
+</beans>

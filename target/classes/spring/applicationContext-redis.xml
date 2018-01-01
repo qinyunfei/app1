@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- 配置redis数据库连接池 -->
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<!-- 连接池中最大连接数。高版本：maxTotal，低版本：maxActive -->
+		<property name="maxTotal" value="${redis.pool.maxTotal}" />
+		<!-- 连接池中最大空闲的连接数. -->
+		<property name="maxIdle" value="${redis.pool.maxIdle}" />
+		<!-- 连接池中最少空闲的连接数. -->
+		<property name="minIdle" value="${redis.pool.minIdle}" />
+		<!-- 当连接池资源耗尽时，调用者最大阻塞的时间，超时将跑出异常。单位，毫秒数;默认为-1.表示永不超时。高版本：maxWaitMillis，低版本：maxWait -->
+		<property name="maxWaitMillis" value="${redis.pool.maxWaitMillis}" />
+		<!-- 连接空闲的最小时间，达到此值后空闲连接将可能会被移除。负值(-1)表示不移除. -->
+		<property name="minEvictableIdleTimeMillis" value="${redis.pool.minEvictableIdleTimeMillis}" />
+		<!-- 对于“空闲链接”检测线程而言，每次检测的链接资源的个数。默认为3 -->
+		<property name="numTestsPerEvictionRun" value="${redis.pool.numTestsPerEvictionRun}" />
+		<!-- “空闲链接”检测线程，检测的周期，毫秒数。如果为负值，表示不运行“检测线程”。默认为-1. -->
+		<property name="timeBetweenEvictionRunsMillis" value="${redis.pool.timeBetweenEvictionRunsMillis}" />
+		<!-- 是否启用Lifo。如果不设置，默认为true。2.5.1以上版本有效 -->
+		<property name="lifo" value="${redis.pool.lifo}" />
+		<!-- 向调用者输出“链接”资源时，是否检测是有有效，如果无效则从连接池中移除，并尝试获取继续获取。默认为false。建议保持默认值. -->
+		<property name="testOnBorrow" value="${redis.pool.testOnBorrow}" />
+		<!-- 向连接池“归还”链接时，是否检测“链接”对象的有效性。默认为false。建议保持默认值. -->
+		<property name="testOnReturn" value="${redis.pool.testOnReturn}" />
+		<!-- 向调用者输出“链接”对象时，是否检测它的空闲超时；默认为false。如果“链接”空闲超时，将会被移除。建议保持默认值. -->
+		<property name="testWhileIdle" value="${redis.pool.testWhileIdle}" />
+		<!-- 当“连接池”中active数量达到阀值时，即“链接”资源耗尽时，连接池需要采取的手段, 默认为1(0:抛出异常。1:阻塞，直到有可用链接资源。2:强制创建新的链接资源) -->
+		<!--<property name="whenExhaustedAction" value="1" /> -->
+	</bean>
+
+
+	<bean id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1">
+			<list>
+				<!-- 可以配置多个redis服务器 -->
+				<bean name="master" class="redis.clients.jedis.JedisShardInfo">
+					<constructor-arg index="0" value="${redis.master.host.0}" />
+					<constructor-arg index="1" value="${redis.master.port.0}"
+						type="int" />
+
+					<!-- <property name="password" value="${redis.pass}"/> -->
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+	<!--对于ShardedJedis的封装 -->
+	<bean id="redisDataSource" class="sgg.qin.framework.redis.RedisDataSourceImpl">
+		<property name="shardedJedisPool" ref="shardedJedisPool" />
+	</bean>
+	<bean id="redisClientTemplate" class="sgg.qin.framework.redis.RedisClientTemplate">
+		<property name="redisDataSource" ref="redisDataSource" />
+	</bean>
+</beans>

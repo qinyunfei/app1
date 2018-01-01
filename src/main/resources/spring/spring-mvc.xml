@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd	
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+	<!-- 开启springmvc开挂模式（将springmvc的一部分组件替换为更为强大的组件） -->
+	<mvc:annotation-driven >
+	</mvc:annotation-driven>
+
+	<!-- 扫描包的@Controller组件 其他不管 保持分工明确 系统默认的过滤器会扫描包含 @Service,@Component,@Repository,@Controller注解修饰的类 
+		注册javabin 当我们配置了自己过滤器时需要关闭系统默认的过滤器这时系统不会为任何java类注册bean 然后我们可以自定义自己的过滤器 -->
+	<context:component-scan base-package="sgg.qin"
+		use-default-filters="false">
+		<!--引入系统Controller过滤器 为实现了@Controller注解的注册bean -->
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+
+
+	<!--对静态资源的访问交由servct处理 建议使用下面的 -->
+	<mvc:default-servlet-handler />
+
+
+	<!-- ViewResolver视图解析器 springMVC9大组件之一） 可以配置多个 -->
+	<bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+		<property name="order" value="5" />
+	</bean>
+
+
+
+
+	<!--开启aop注解 proxy-target-class属性值决定是基于接口的还是基于类的代理被创建 就是使用jdk的动态代理呀还是使用cglib的动态代理 -->
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+
+
+
+	<!--手动注入切面到mvc -->
+	<bean id="cacheAspect" class="sgg.qin.framework.aop.ActionAspec"></bean>
+
+	<!-- exceptionResolver自定义异常处理程序解析器 springmvc九大组件之一 全局异常捕捉 -->
+	<bean class="sgg.qin.framework.springmvc.exception.MyExceptionResolver"></bean>
+
+
+	
+	<!-- 高级用法请百度 -->
+	<mvc:cors>
+		<!-- 所有请求都能跨域 -->
+		<mvc:mapping path="/**" />
+	</mvc:cors>
+
+</beans>
+
+
+
+
